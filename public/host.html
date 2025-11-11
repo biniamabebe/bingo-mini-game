@@ -1,0 +1,154 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Bingo Host</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <style>
+    body{font-family:Arial, sans-serif;background:#f3f5fb;margin:0;padding:24px;}
+    .card{max-width:900px;margin:0 auto;background:#fff;padding:20px;border-radius:12px;box-shadow:0 10px 25px rgba(0,0,0,.08);}
+    h1{margin-top:0;}
+    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+    .btn{padding:10px 16px;border:0;border-radius:8px;cursor:pointer;font-weight:bold;}
+    .primary{background:#2563eb;color:#fff;}
+    .danger{background:#dc2626;color:#fff;}
+    .muted{background:#e5e7eb;color:#111827;}
+    .stat{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0 20px;}
+    .box{background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:12px;text-align:center;}
+    .value{font-size:1.6rem;font-weight:bold;color:#1d4ed8;}
+    .players{max-height:260px;overflow:auto;border:1px solid #e5e7eb;border-radius:10px;padding:10px;background:#fafafa;}
+    .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#eef2ff;color:#3730a3;font-weight:bold;margin:4px;}
+    .current{font-size:2rem;font-weight:bold;padding:18px;text-align:center;border-radius:12px;background:#fef3c7;border:1px solid #fde68a;}
+    .bingo-bar{display:flex;gap:8px;justify-content:center;align-items:center;margin:8px 0;}
+    .b-letter{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid #d1d5db;background:#f8fafc;font-weight:bold;}
+    .b-letter.active{background:#1f2937;color:#fff;border-color:#1f2937;transform:scale(1.05);}
+    .link{margin-top:8px;color:#2563eb;word-break:break-all;}
+    input{padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🎯 Bingo – Host</h1>
+    <div class="row">
+      <button id="createBtn" class="btn primary">Create Game</button>
+      <input id="gameIdInput" placeholder="Enter game code (e.g. 7K3F)"/>
+      <button id="attachBtn" class="btn muted">Attach as Host</button>
+    </div>
+    <p>Share the code; players open <b>/join</b> or use the link.</p>
+
+    <h3>Game Code: <span id="gameId" style="letter-spacing:2px;">—</span></h3>
+    <div id="shareLink" class="link"></div>
+
+    <div class="stat">
+      <div class="box"><div>Players</div><div class="value" id="pCount">0</div></div>
+      <div class="box"><div>Drawn</div><div class="value" id="dCount">0</div></div>
+      <div class="box"><div>Status</div><div class="value" id="status">Idle</div></div>
+    </div>
+
+    <div class="row" style="margin-bottom:12px;">
+      <button id="startBtn" class="btn primary" disabled>Start Auto Draw</button>
+      <button id="stopBtn" class="btn muted" disabled>Stop</button>
+      <button id="resetBtn" class="btn danger" disabled>Reset</button>
+    </div>
+
+    <div class="current">Current: <span id="current">—</span></div>
+    <div class="bingo-bar">
+      <div id="L_B" class="b-letter">B</div>
+      <div id="L_I" class="b-letter">I</div>
+      <div id="L_N" class="b-letter">N</div>
+      <div id="L_G" class="b-letter">G</div>
+      <div id="L_O" class="b-letter">O</div>
+    </div>
+
+    <h3>Drawn Numbers</h3>
+    <div id="drawn" class="players"></div>
+
+    <h3>Players</h3>
+    <div id="players" class="players"></div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
+  <script>
+    const socket = io();
+    const el = id => document.getElementById(id);
+
+    function bingoLetter(n){
+      if(n>=1 && n<=15) return 'B';
+      if(n<=30) return 'I';
+      if(n<=45) return 'N';
+      if(n<=60) return 'G';
+      return 'O';
+    }
+    function highlightLetter(L){
+      ['B','I','N','G','O'].forEach(ch=>{
+        const x = el('L_'+ch); if(!x) return;
+        if(ch===L) x.classList.add('active'); else x.classList.remove('active');
+      });
+    }
+    function setCurrent(n){
+      if(n==null){ el('current').textContent='—'; highlightLetter(null); return; }
+      const L=bingoLetter(n);
+      el('current').textContent = `${L}-${n}`;
+      highlightLetter(L);
+    }
+
+    let gameId=null;
+
+    function setStatus(t){ el('status').textContent=t; }
+    function renderPlayers(list){
+      el('players').innerHTML = list.map(p=>`<span class="pill">${p.name}${p.disqualified?' ❌':''}</span>`).join('');
+      el('pCount').textContent = list.length;
+    }
+    function renderDrawn(nums){
+      const last5 = nums.slice(-5);
+      document.getElementById('drawn').innerHTML =
+        last5.map(n => `<span class="pill">${bingoLetter(n)}-${n}</span>`).join('');
+      // Keep the total counter accurate:
+      document.getElementById('dCount').textContent = nums.length;
+    }
+
+    function showShareLink(code){ el('shareLink').textContent = location.origin + '/join?game=' + code; }
+
+    el('createBtn').onclick=()=>socket.emit('host:create',(res)=>{
+      if(!res.ok) return alert(res.error||'Failed');
+      gameId=res.gameId; el('gameId').textContent=gameId;
+      el('startBtn').disabled=false; el('resetBtn').disabled=false;
+      showShareLink(gameId); setStatus('Ready'); setCurrent(null);
+    });
+    el('attachBtn').onclick=()=>{
+      const code=el('gameIdInput').value.trim().toUpperCase(); if(!code) return alert('Enter code');
+      socket.emit('host:join',{gameId:code},(res)=>{
+        if(!res.ok) return alert(res.error||'Failed to attach');
+        gameId=res.gameId; el('gameId').textContent=gameId;
+        el('startBtn').disabled=false; el('resetBtn').disabled=false;
+        showShareLink(gameId);
+      });
+    };
+    el('startBtn').onclick=()=>{ if(!gameId) return;
+      socket.emit('host:start',{gameId},(r)=>{
+        if(!r.ok) return alert(r.error||'Cannot start');
+        setStatus('Drawing…'); el('startBtn').disabled=true; el('stopBtn').disabled=false;
+      });
+    };
+    el('stopBtn').onclick=()=>{ if(!gameId) return;
+      socket.emit('host:stop',{gameId},()=>{ setStatus('Paused'); el('startBtn').disabled=false; el('stopBtn').disabled=true; });
+    };
+    el('resetBtn').onclick=()=>{ if(!gameId) return;
+      if(!confirm('Reset game (clears players)?')) return;
+      socket.emit('host:reset',{gameId},()=>{
+        renderPlayers([]); renderDrawn([]); setStatus('Ready'); setCurrent(null);
+        el('startBtn').disabled=false; el('stopBtn').disabled=true;
+      });
+    };
+
+    socket.on('state:players', renderPlayers);
+    socket.on('number:drawn', ({number,drawn})=>{ renderDrawn(drawn); setCurrent(number); });
+    socket.on('state:meta', (s)=>{
+      if(s.closed){ setStatus('Ended'); el('startBtn').disabled=true; el('stopBtn').disabled=true; }
+      else if(s.started) setStatus('Drawing…'); else setStatus('Idle');
+      setCurrent((s.current??null)); el('dCount').textContent = s.drawnCount ?? 0;
+    });
+    socket.on('game:reset', ()=>{ renderPlayers([]); renderDrawn([]); setStatus('Ready'); setCurrent(null); });
+  </script>
+</body>
+</html>
