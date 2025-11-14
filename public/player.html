@@ -29,9 +29,10 @@
     .b-letter.active{background:#1f2937;color:#fff;border-color:#1f2937;transform:scale(1.05);}
     .hint{color:#6b7280;}
    /* Layout: always 2 columns */
+
 .layout {
   display: grid;
-  grid-template-columns: 1.7fr 1fr; /* left : right */
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
   gap: 16px;
   align-items: start;
 }
@@ -77,10 +78,37 @@
   border-right:1px solid #cbd5e1;    /* grid vertical lines */
   border-bottom:1px solid #cbd5e1;   /* grid horizontal lines */
 }
-.refgrid > :nth-child(5n){ border-right:none; }          /* every 5th cell */
-.refgrid > :nth-last-child(-n+5){ border-bottom:none; } 
+.refgrid > :nth-last-child(-n+5){ border-bottom:none; }
 
 .refcell.ref-marked { background: #16a34a; color: #fff; border-color: #15803d; }
+
+/* Responsive tweaks */
+@media (max-width: 900px) {
+  body { padding: 12px; }
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  .wrap {
+    max-width: none;
+  }
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .row input,
+  .row button {
+    width: 100%;
+  }
+  .panel {
+    grid-template-columns: 1fr;
+  }
+  .refpanel {
+    position: static;
+  }
+  .refgrid {
+    grid-auto-rows: minmax(36px, auto);
+  }
+}
 
   </style>
 </head>
