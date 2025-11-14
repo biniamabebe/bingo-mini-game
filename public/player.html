@@ -78,6 +78,7 @@
   border-right:1px solid #cbd5e1;    /* grid vertical lines */
   border-bottom:1px solid #cbd5e1;   /* grid horizontal lines */
 }
+.refgrid > :nth-child(5n){ border-right:none; }          /* every 5th cell */
 .refgrid > :nth-last-child(-n+5){ border-bottom:none; }
 
 .refcell.ref-marked { background: #16a34a; color: #fff; border-color: #15803d; }
@@ -105,8 +106,15 @@
   .refpanel {
     position: static;
   }
+}
+
+@media (max-width: 600px) {
   .refgrid {
-    grid-auto-rows: minmax(36px, auto);
+    grid-auto-rows: minmax(34px, auto);
+  }
+  .bingo-bar,
+  .cartel-card {
+    flex-wrap: wrap;
   }
 }
 
