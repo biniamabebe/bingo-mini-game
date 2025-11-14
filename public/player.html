@@ -583,9 +583,8 @@
         ui.joinBtn.textContent = 'In game';
         return;
       }
-      const hasGame = Boolean(getTargetGame());
       const hasName = Boolean(ui.nameInput.value.trim());
-      ui.joinBtn.disabled = !(hasGame && hasName);
+      ui.joinBtn.disabled = !hasName;
       if (!label) ui.joinBtn.textContent = 'Play';
     }
 
@@ -690,6 +689,7 @@
       const targetGame = getTargetGame();
       if (!targetGame) {
         updateJoinHint('Waiting for the host to open a game…');
+        updateJoinButton();
         return;
       }
       const desiredName = ui.nameInput.value.trim();
