@@ -5,507 +5,203 @@
   <title>Bingo – Join Game</title>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <style>
-    :root {
-      --bg-start: #d9a8ff;
-      --bg-end: #a26af7;
-      --panel-bg: #fef6ff;
-      --accent: #f97316;
-      --deep-purple: #5c2d91;
-      --soft-border: rgba(92,45,145,.15);
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: 'Inter', 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, var(--bg-start), var(--bg-end));
-      min-height: 100vh;
-      padding: 20px;
-      color: #341045;
-    }
-    h1, h2, h3, p { margin: 0; }
-    .app-shell {
-      max-width: 1200px;
-      margin: 0 auto;
-      display: grid;
-      gap: 24px;
-      grid-template-columns: minmax(260px, 360px) minmax(0, 1fr);
-    }
-    .panel {
-      background: var(--panel-bg);
-      border-radius: 26px;
-      padding: 28px;
-      box-shadow: 0 20px 40px rgba(80,16,143,.18);
-    }
-    .hero {
-      margin-bottom: 20px;
-    }
-    .hero .eyebrow {
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      font-size: 0.75rem;
-      color: rgba(52,16,69,.7);
-      margin-bottom: 6px;
-    }
-    .hero h1 {
-      font-size: 2rem;
-      margin-bottom: 6px;
-    }
-    .hero p {
-      color: rgba(52,16,69,.75);
-    }
-    .join-card {
-      background: #f7e4ff;
-      padding: 18px;
-      border-radius: 20px;
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 12px;
-      align-items: end;
-      margin-bottom: 24px;
-    }
-    label { font-size: 0.9rem; font-weight: 600; display: block; margin-bottom: 6px; }
-    input {
-      width: 100%;
-      border: 2px solid rgba(92,45,145,.2);
-      border-radius: 14px;
-      padding: 12px 14px;
-      font-size: 1rem;
-      font-weight: 600;
-      color: #341045;
-      background: #fff;
-    }
-    input:disabled { opacity: 0.7; }
-    .cta {
-      border: none;
-      border-radius: 16px;
-      background: linear-gradient(120deg, #ff7b39, #ffb347);
-      color: #fff;
-      font-size: 1.1rem;
-      font-weight: 700;
-      padding: 14px 24px;
-      min-width: 120px;
-      cursor: pointer;
-      transition: transform .15s ease, box-shadow .15s ease;
-      box-shadow: 0 10px 20px rgba(255,123,57,.35);
-    }
-    .cta:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      box-shadow: none;
-    }
-    .join-status {
-      grid-column: 1 / -1;
-      font-size: 0.9rem;
-      color: rgba(52,16,69,.75);
-      margin: 0;
-    }
-    .stat-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: 12px;
-      margin-bottom: 24px;
-    }
-    .stat-card {
-      background: #fff;
-      border-radius: 18px;
-      padding: 12px 16px;
-      border: 2px solid var(--soft-border);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,.3);
-    }
-    .stat-label {
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      color: rgba(52,16,69,.55);
-      letter-spacing: 1px;
-    }
-    .stat-value {
-      display: block;
-      font-weight: 700;
-      font-size: 1.3rem;
-      margin-top: 6px;
-    }
-    .call-card {
-      background: #fff;
-      border-radius: 24px;
-      padding: 18px;
-      border: 2px solid var(--soft-border);
-      display: grid;
-      gap: 12px;
-      margin-bottom: 24px;
-    }
-    .call-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .status-chip {
-      padding: 6px 14px;
-      border-radius: 999px;
-      background: rgba(92,45,145,.1);
-      font-weight: 700;
-      color: var(--deep-purple);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      font-size: 0.8rem;
-    }
-    .call-indicator {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      justify-content: center;
-    }
-    .call-letter {
-      width: 68px;
-      height: 68px;
-      border-radius: 20px;
-      background: #fff0f5;
-      border: 3px solid #ff86a5;
-      font-size: 2rem;
-      font-weight: 800;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #e11d48;
-    }
-    .call-number {
-      font-size: 3rem;
-      font-weight: 800;
-      color: #341045;
-    }
-    .drawn-card {
-      background: #fff;
-      border-radius: 20px;
-      padding: 18px;
-      border: 2px solid var(--soft-border);
-      margin-bottom: 24px;
-    }
-    .section-heading {
-      font-weight: 700;
-      margin-bottom: 10px;
-    }
-    .drawn-pills {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 6px 12px;
-      border-radius: 999px;
-      background: #f0e2ff;
-      font-weight: 600;
-      color: #341045;
-    }
-    .pill span {
-      font-size: 0.85rem;
-      opacity: 0.8;
-    }
-    .board-card {
-      background: #fff;
-      border-radius: 26px;
-      padding: 18px;
-      border: 2px solid var(--soft-border);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,.4);
-    }
-    .board-heading {
-      font-weight: 700;
-      margin-bottom: 12px;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 8px;
-    }
-    .cell {
-      border-radius: 16px;
-      min-height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 1.2rem;
-      border: 3px solid rgba(92,45,145,.12);
-      background: #fff;
-      color: #341045;
-      text-transform: uppercase;
-    }
-    .cell.head {
-      color: #fff;
-      border: none;
-      min-height: 50px;
-    }
-    .cell.head.head-B { background: #f97316; }
-    .cell.head.head-I { background: #16a34a; }
-    .cell.head.head-N { background: #2563eb; }
-    .cell.head.head-G { background: #dc2626; }
-    .cell.head.head-O { background: #7c3aed; }
-    .cell.free {
-      background: #fff1c9;
-      border-color: #facc15;
-      color: #c2410c;
-    }
-    .cell.marked {
-      background: #22c55e;
-      border-color: #16a34a;
-      color: #fff;
-      box-shadow: inset 0 0 0 3px rgba(255,255,255,.35);
-    }
-    .cell.markable {
-      cursor: pointer;
-      box-shadow: 0 0 0 3px rgba(249,115,22,.4);
-    }
-    .cell.markable:hover {
-      transform: scale(1.02);
-    }
-    .bingo-btn {
-      margin-top: 24px;
-      width: 100%;
-      border: none;
-      border-radius: 18px;
-      padding: 16px;
-      font-size: 1.3rem;
-      font-weight: 800;
-      letter-spacing: 1px;
-      color: #fff;
-      background: linear-gradient(120deg, #ff7b39, #ffb347);
-      box-shadow: 0 16px 30px rgba(255,123,57,.35);
-      cursor: pointer;
-      text-transform: uppercase;
-    }
-    .bingo-btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      box-shadow: none;
-    }
-    .reference {
-      position: sticky;
-      top: 24px;
-      align-self: start;
-    }
-    .reference-card {
-      background: rgba(255,255,255,.18);
-      border-radius: 30px;
-      padding: 24px;
-      color: #fff;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 20px 40px rgba(49,6,87,.3);
-    }
-    .reference-card h3 {
-      font-size: 1.1rem;
-      margin-bottom: 16px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    .refgrid {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 6px;
-    }
-    .refhead, .refcell {
-      border-radius: 12px;
-      min-height: 44px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-    }
-    .refhead {
-      background: rgba(255,255,255,.25);
-      color: #fff;
-      font-size: 1rem;
-      text-transform: uppercase;
-    }
-    .refcell {
-      background: rgba(255,255,255,.15);
-      color: #fff;
-      border: 1px solid rgba(255,255,255,.15);
-    }
-    .refcell.ref-marked {
-      background: #22c55e;
-      color: #fff;
-      border-color: #16a34a;
-      box-shadow: 0 6px 15px rgba(17,94,89,.4);
-    }
-    @media (max-width: 1024px) {
-      .app-shell {
-        grid-template-columns: 1fr;
-      }
-      .reference {
-        position: static;
-      }
-    }
-    @media (max-width: 640px) {
-      body { padding: 16px; }
-      .panel { padding: 20px; }
-      .join-card {
-        grid-template-columns: 1fr;
-      }
-      .cta { width: 100%; }
-      .call-indicator { flex-direction: column; }
-      .cell { min-height: 54px; font-size: 1rem; }
-    }
+    body{font-family:Arial, sans-serif;background:#eef2ff;margin:0;padding:18px;}
+    .wrap{max-width:980px;margin:0 auto;background:#fff;border-radius:12px;padding:18px;box-shadow:0 8px 20px rgba(0,0,0,.08);}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+    input{padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;}
+    .btn{padding:10px 16px;border:0;border-radius:8px;cursor:pointer;font-weight:bold;}
+    .primary{background:#2563eb;color:#fff;}
+    .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:14px;}
+    .cell{aspect-ratio:1;border:2px solid #4b5563;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:bold;background:#fff;}
+    .head{background:#1f2937;color:#fff;}
+    .free{background:#10b981;color:#fff;}
+    .marked{background:#fbbf24;border-color:#f59e0b;}
+    .markable{cursor:pointer;}
+    .panel{margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    .box{border:1px solid #e5e7eb;padding:12px;border-radius:10px;background:#fafafa;}
+    .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#e0e7ff;color:#3730a3;font-weight:bold;margin:4px;}
+    .bingo{width:100%;margin-top:10px;padding:12px;font-size:1.1rem;background:#16a34a;color:#fff;border:0;border-radius:10px;cursor:pointer;}
+    .bingo:disabled{background:#9ca3af;cursor:not-allowed;}
+    .current{font-size:1.6rem;font-weight:bold;padding:10px;background:#fff7ed;border:1px solid #ffedd5;border-radius:10px;text-align:center;}
+    .bingo-bar{display:flex;gap:8px;justify-content:center;align-items:center;margin:8px 0;}
+    .cartel-card{display:flex;gap:8px;justify-content:center;align-items:center;margin:8px 0;}
+    .b-letter{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid #d1d5db;background:#f8fafc;font-weight:bold;}
+    .b-letter.active{background:#1f2937;color:#fff;border-color:#1f2937;transform:scale(1.05);}
+    .hint{color:#6b7280;}
+   /* Layout: always 2 columns */
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+/* Panels */
+.wrap {
+  background: #fff;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 8px 20px rgba(0,0,0,.08);
+}
+
+/* Right side (big reference board) is sticky */
+.refpanel {
+  position: sticky;
+  top: 12px;
+  align-self: start;
+}
+
+/* Big reference board */
+.refgrid{
+  display:grid;
+  grid-template-columns:repeat(5, 1fr);
+  grid-auto-rows: 42px;              /* header + cells uniform height; tweak if needed */
+  gap:0;                             /* no gaps — we’ll draw grid lines with borders */
+  border:2px solid #1f2937;          /* outer border */
+  border-radius:8px;
+  overflow:hidden;                   /* clip inner borders to radius */
+}
+.refhead{
+  background:#1f2937;
+  color:#fff;
+  font-weight:800;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1rem;
+  border-right:1px solid #0f172a;
+  border-bottom:1px solid #0f172a;
+}
+.refcell{
+  display:flex; align-items:center; justify-content:center;
+  font-weight:700; font-size:0.95rem;
+  background:#fff; color:#111827;
+  border-right:1px solid #cbd5e1;    /* grid vertical lines */
+  border-bottom:1px solid #cbd5e1;   /* grid horizontal lines */
+}
+.refgrid > :nth-last-child(-n+5){ border-bottom:none; }
+
+.refcell.ref-marked { background: #16a34a; color: #fff; border-color: #15803d; }
+
+/* Responsive tweaks */
+@media (max-width: 900px) {
+  body { padding: 12px; }
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  .wrap {
+    max-width: none;
+  }
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .row input,
+  .row button {
+    width: 100%;
+  }
+  .panel {
+    grid-template-columns: 1fr;
+  }
+  .refpanel {
+    position: static;
+  }
+  .refgrid {
+    grid-auto-rows: minmax(36px, auto);
+  }
+}
+
   </style>
 </head>
 <body>
-  <div class="app-shell">
-    <aside class="reference">
-      <div class="reference-card">
-        <h3>Reference Board</h3>
-        <div id="refBoard" class="refgrid"></div>
-      </div>
-    </aside>
-    <main class="panel">
-      <section class="hero">
-        <div class="eyebrow">Live Bingo Room</div>
-        <h1>Jump into the current game</h1>
-        <p>Just tell us your name, tap play, and mark numbers as soon as they are called.</p>
-      </section>
-      <section class="join-card">
-        <div>
-          <label for="name">Your name</label>
-          <input id="name" placeholder="e.g. Taylor" maxlength="20" autocomplete="off"/>
-        </div>
-        <button id="joinBtn" class="cta" disabled>Play</button>
-        <p class="join-status" id="joinStatus">Waiting for the host to open a game…</p>
-      </section>
-      <section class="stat-row">
-        <div class="stat-card">
-          <span class="stat-label">Player</span>
-          <span class="stat-value" id="statPlayer">—</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-label">Game</span>
-          <span class="stat-value" id="statGame">—</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-label">Status</span>
-          <span class="stat-value" id="statStatus">Waiting</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-label">Current Call</span>
-          <span class="stat-value" id="statCall">—</span>
-        </div>
-      </section>
-      <section class="call-card">
-        <div class="call-header">
-          <div class="status-chip" id="statusChip">Waiting</div>
-          <div class="game-code" id="gameCodeLabel"></div>
-        </div>
-        <div class="call-indicator">
-          <div id="callLetter" class="call-letter">–</div>
-          <div id="callNumber" class="call-number">—</div>
-        </div>
-        <div class="section-heading">Current Call</div>
-      </section>
-      <section class="drawn-card">
-        <div class="section-heading">Recent Calls</div>
-        <div id="drawn" class="drawn-pills"></div>
-      </section>
-      <section class="board-card">
-        <div class="board-heading">Your Card</div>
-        <div id="board"></div>
-      </section>
-      <button id="bingoBtn" class="bingo-btn" disabled>BINGO!</button>
-    </main>
-  </div>
+    
+  <div class="layout">
+    <div class="wrap ">
+      <h2>🎯 Join Bingo</h2>
+    <p class="hint" id="statusHint">Waiting for the host to open a game.</p>
+    <div class="row">
+      <input id="name" placeholder="Your name (max 20 chars)" maxlength="20"/>
+      <button id="joinBtn" class="btn primary">Join</button>
+    </div>
 
-  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
+    <div style="margin-top:10px;" class="current">Current: <span id="current">—</span></div>
+    <div class="box">
+        <h3>Drawn Numbers</h3>
+        <div id="drawn"></div>
+      </div>
+
+    <div id="board"></div>
+
+    <div class="panel">
+      
+      <div class="box">
+        <h3>Status</h3>
+        <div>Started: <b id="st">—</b></div>
+        <div>Ended: <b id="en">—</b></div>
+        <button id="bingoBtn" class="bingo" disabled>🎯 BINGO!</button>
+      </div>
+    </div>
+    </div>
+    <aside class="refpanel">
+        <div class="wrap">
+            <h3>All Numbers (Auto-marked)</h3>
+            <div id="refBoard" class="refgrid"></div>
+        </div>
+    </aside>
+  </div>
+    
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
   <script>
     const socket = io();
-    const el = (id) => document.getElementById(id);
+    const el = id => document.getElementById(id);
     const joinBtn = el('joinBtn');
     const nameInput = el('name');
-    const joinStatus = el('joinStatus');
-    const statusChip = el('statusChip');
-    const statPlayer = el('statPlayer');
-    const statGame = el('statGame');
-    const statStatus = el('statStatus');
-    const statCall = el('statCall');
-    const callLetter = el('callLetter');
-    const callNumber = el('callNumber');
-    const gameCodeLabel = el('gameCodeLabel');
-    const bingoBtn = el('bingoBtn');
-
-    let gameId = null;
-    let inviteGameId = (new URLSearchParams(location.search).get('game') || '').toUpperCase();
-    let activeGameCode = null;
-    let playerName = '';
-    let card = null;
-    let started = false;
-    let closed = false;
-    let drawnSet = new Set();
-
-    function getTargetGame(){
-      return gameId || inviteGameId || activeGameCode;
+    const status = el('statusHint');
+    joinBtn.disabled = true;
+    joinBtn.setAttribute('aria-disabled', 'true');
+    const inviteGame=(new URLSearchParams(location.search).get('game')||'').toUpperCase();
+    let activeGameId = inviteGame || null;
+    let joined=false;
+    if(inviteGame){
+      if(status){
+        status.textContent=`Joining game ${inviteGame}. Enter your name to hop in.`;
+      }
+      joinBtn.disabled=false;
+      joinBtn.removeAttribute('aria-disabled');
     }
 
-    function updateJoinButtonState(){
-      const ready = !!getTargetGame() && !!nameInput.value.trim() && !card;
-      joinBtn.disabled = !ready;
+        // Build the static 1–75 reference board once
+   function buildRefBoard(){
+        const ref = document.getElementById('refBoard');
+        if (!ref) return;
+
+        let html = '';
+        // Header row (exactly 5 items)
+        ['B','I','N','G','O'].forEach(h => {
+            html += `<div class="refhead">${h}</div>`;
+        });
+
+        // 15 rows × 5 cols of numbers under the right letter
+        for (let row = 0; row < 15; row++) {
+            for (let col = 0; col < 5; col++) {
+            const n = col * 15 + (row + 1);  // B 1–15, I 16–30, N 31–45, G 46–60, O 61–75
+            html += `<div class="refcell" data-ref="${n}">${n}</div>`;
+            }
+            }
+
+    ref.innerHTML = html;
     }
 
-    nameInput.addEventListener('input', updateJoinButtonState);
 
-    function setJoinButtonLabel(custom){
-      if(custom){
-        joinBtn.textContent = custom;
-        return;
-      }
-      if(card){
-        joinBtn.textContent = 'Ready';
-      } else if(gameId){
-        joinBtn.textContent = 'Play again';
-      } else {
-        joinBtn.textContent = 'Play';
-      }
-    }
-
-    function updateJoinStatus(message){
-      if(message){
-        joinStatus.textContent = message;
-        updateJoinButtonState();
-        return;
-      }
-      if(card){
-        joinStatus.textContent = closed
-          ? 'Game finished! Wait for the host to reset.'
-          : `You're in! Waiting for calls…`;
-      } else if(inviteGameId){
-        joinStatus.textContent = `Invite ready for game ${inviteGameId}. Enter your name to play.`;
-      } else if(activeGameCode){
-        joinStatus.textContent = `Game ${activeGameCode} is live. Enter your name to jump in.`;
-      } else {
-        joinStatus.textContent = 'Waiting for the host to open a game…';
-      }
-      updateJoinButtonState();
-    }
-
-    function buildRefBoard(){
-      const ref = document.getElementById('refBoard');
-      if(!ref) return;
-      let html = '';
-      ['B','I','N','G','O'].forEach(h => {
-        html += `<div class="refhead">${h}</div>`;
-      });
-      for (let row = 0; row < 15; row++) {
-        for (let col = 0; col < 5; col++) {
-          const n = col * 15 + (row + 1);
-          html += `<div class="refcell" data-ref="${n}">${n}</div>`;
-        }
-      }
-      ref.innerHTML = html;
-    }
-
+    // Mark/unmark cells on the reference board from drawnSet
     function updateRefMarks(){
-      const ref = document.getElementById('refBoard');
-      if(!ref) return;
-      ref.querySelectorAll('.refcell').forEach(cell => {
-        const n = Number(cell.dataset.ref);
-        if(drawnSet.has(n)) cell.classList.add('ref-marked');
+    const ref = document.getElementById('refBoard');
+    if (!ref) return;
+    ref.querySelectorAll('.refcell').forEach(cell => {
+        const n = +cell.dataset.ref;
+        if (drawnSet.has(n)) cell.classList.add('ref-marked');
         else cell.classList.remove('ref-marked');
-      });
+    });
     }
 
     function bingoLetter(n){
@@ -515,25 +211,27 @@
       if(n<=60) return 'G';
       return 'O';
     }
-
+    function highlightLetter(L){
+      ['B','I','N','G','O'].forEach(ch=>{
+        const x = el('L_'+ch); if(!x) return;
+        if(ch===L) x.classList.add('active'); else x.classList.remove('active');
+      });
+    }
     function setCurrent(n){
-      if(n==null){
-        callLetter.textContent = '–';
-        callNumber.textContent = '—';
-        statCall.textContent = '—';
-        return;
-      }
-      const L = bingoLetter(n);
-      callLetter.textContent = L;
-      callNumber.textContent = n;
-      statCall.textContent = `${L}-${n}`;
+      if(n==null){ el('current').textContent='—'; highlightLetter(null); return; }
+      const L=bingoLetter(n);
+      el('current').textContent = `${L}-${n}`;
+      highlightLetter(L);
     }
 
-    function renderCard(){
-      const container = document.getElementById('board');
-      if(!card){ container.innerHTML = '<p style="color:rgba(52,16,69,.6);">Tap Play to get your card.</p>'; return; }
+    let gameId=null, card=null, started=false, closed=false, drawnSet=new Set();
+    buildRefBoard();           // ← builds the static 1–75 grid one time
+    updateRefMarks();          // ← ensures it starts with no highlights
+
+      function renderCard(){
+      if(!card){ el('board').innerHTML=''; return; }
       let html='<div class="grid">';
-      ['B','I','N','G','O'].forEach(h=>html+=`<div class="cell head head-${h}">${h}</div>`);
+      ['B','I','N','G','O'].forEach(h=>html+=`<div class="cell head">${h}</div>`);
       for(let r=0;r<5;r++){
         for(let c=0;c<5;c++){
           const n=card.numbers[c][r];
@@ -541,18 +239,15 @@
           const isMarked=card.marked[r][c];
           const isDrawn=!isFree && drawnSet.has(n);
           const canMark=started && !closed && !isFree && !isMarked && isDrawn;
-          let cls='cell';
-          if(isFree) cls+=' free';
-          if(isMarked) cls+=' marked';
-          if(canMark) cls+=' markable';
-          html+=`<div class="${cls}" data-r="${r}" data-c="${c}">${isFree?'★':n}</div>`;
+          let cls='cell'; if(isFree) cls+=' free'; if(isMarked) cls+=' marked'; if(canMark) cls+=' markable';
+          html+=`<div class="${cls}" data-r="${r}" data-c="${c}">${n}</div>`;
         }
       }
-      html+='</div>';
-      container.innerHTML=html;
-      container.querySelectorAll('.cell.markable').forEach(cell=>{
+      html+='</div>'; el('board').innerHTML=html;
+
+      el('board').querySelectorAll('.cell.markable').forEach(cell=>{
         cell.onclick=()=>{
-          const r=Number(cell.dataset.r), c=Number(cell.dataset.c);
+          const r=+cell.dataset.r, c=+cell.dataset.c;
           socket.emit('player:mark',{gameId,row:r,col:c},(res)=>{
             if(res?.ok && res.marked){ card.marked[r][c]=true; renderCard(); }
             else if(res?.error){ alert(res.error); }
@@ -562,128 +257,133 @@
     }
 
     function renderDrawn(nums){
-      const list = Array.isArray(nums) ? nums : [];
-      const recent = list.slice(-8).reverse();
-      el('drawn').innerHTML = recent.map(n=>{
-        const L=bingoLetter(n);
-        return `<span class="pill"><strong>${L}</strong><span>${n}</span></span>`;
-      }).join('');
+        const last5 = nums.slice(-5);
+        document.getElementById('drawn').innerHTML =
+        last5.map(n => `<span class="pill">${bingoLetter(n)}-${n}</span>`).join('');
     }
 
-    function setMeta(){
-      const statusText = closed ? 'Finished' : (started ? 'Started' : 'Waiting');
-      statusChip.textContent = statusText;
-      statStatus.textContent = statusText;
-      statGame.textContent = gameId || '—';
-      gameCodeLabel.textContent = gameId ? `#${gameId}` : '';
-      bingoBtn.disabled = !(started && !closed && card);
+    function setMeta(){ el('st').textContent=started?'Yes':'No'; el('en').textContent=closed?'Yes':'No'; el('bingoBtn').disabled=!started||closed; }
+
+    function setStatusMessage(msg){
+      if(!status) return;
+      status.textContent = msg;
     }
 
-    function attemptJoin(){
-      const targetGame = getTargetGame();
-      if(!targetGame){
-        updateJoinStatus('Waiting for the host to open a game…');
+    function updateJoinButton(){
+      if(joined){
+        joinBtn.disabled = true;
+        joinBtn.setAttribute('aria-disabled','true');
         return;
       }
-      const desiredName = nameInput.value.trim();
-      if(!desiredName){
-        alert('Enter your name first.');
+      if(inviteGame){
+        joinBtn.disabled = false;
+        joinBtn.removeAttribute('aria-disabled');
+        return;
+      }
+      const enabled = !!activeGameId;
+      joinBtn.disabled = !enabled;
+      if(enabled){
+        joinBtn.removeAttribute('aria-disabled');
+      } else {
+        joinBtn.setAttribute('aria-disabled','true');
+      }
+    }
+
+    el('joinBtn').onclick=()=>{
+      const name=el('name').value.trim();
+      if(!name) return alert('Enter your name');
+      if(joined) return;
+      const targetGame = inviteGame || activeGameId;
+      if(!targetGame){
+        setStatusMessage('Waiting for the host to open a game.');
+        joinBtn.disabled = true;
+        joinBtn.setAttribute('aria-disabled','true');
         return;
       }
       joinBtn.disabled = true;
-      setJoinButtonLabel('Joining…');
-      socket.emit('player:join',{gameId:targetGame,name:desiredName},(res)=>{
+      joinBtn.setAttribute('aria-disabled','true');
+      const payload={gameId:targetGame,name};
+      socket.emit('player:join',payload,(res)=>{
         if(!res?.ok){
-          joinBtn.disabled = false;
-          setJoinButtonLabel();
-          updateJoinStatus(res?.error || 'Unable to join right now.');
-          updateJoinButtonState();
-          return;
+          setStatusMessage(res?.error || 'Join failed. Please try again.');
+          updateJoinButton();
+          return alert(res?.error||'Join failed');
         }
-        card = res.card;
-        gameId = res.gameId || targetGame;
-        playerName = desiredName;
-        nameInput.value = playerName;
+        gameId=res.gameId; card=res.card; started=res.started; closed=res.closed;
+        activeGameId = res.gameId || activeGameId;
+        joined=true;
+        setStatusMessage(`You're in! Playing game ${res.gameId}.`);
         nameInput.disabled = true;
-        setJoinButtonLabel('Ready');
-        drawnSet = new Set(res.drawn || []);
-        started = !!res.started;
-        closed = !!res.closed;
-        renderCard();
-        renderDrawn(res.drawn || []);
-        updateRefMarks();
-        setMeta();
-        setCurrent(res.drawn?.length ? res.drawn[res.drawn.length-1] : null);
-        statPlayer.textContent = playerName;
-        updateJoinStatus();
+        joinBtn.textContent = 'Joined';
+        drawnSet=new Set(res.drawn||[]); updateRefMarks(); renderCard(); renderDrawn(res.drawn||[]); setMeta();
+        const last=(res.drawn&&res.drawn.length)?res.drawn[res.drawn.length-1]:null;
+        setCurrent(last);
       });
-    }
+    };
 
-    joinBtn.addEventListener('click', attemptJoin);
-
-    bingoBtn.addEventListener('click',()=>{
+    el('bingoBtn').onclick=()=>{
       if(!gameId) return;
       socket.emit('player:claim',{gameId},(res)=>{
         if(!res?.ok) return;
         if(!res.valid && res.disqualified) alert('❌ False claim – you are disqualified.');
       });
-    });
-
-    buildRefBoard();
-    updateRefMarks();
-    renderCard();
-
-    socket.on('game:available',({gameId:active})=>{
-      activeGameCode = active || null;
-      if(!gameId){
-        updateJoinStatus();
-      }
-      updateJoinButtonState();
-    });
+    };
 
     socket.on('number:drawn',({number,drawn})=>{
-      drawnSet = new Set(drawn);
-      renderDrawn(drawn);
-      updateRefMarks();
-      renderCard();
-      setCurrent(number);
+      drawnSet=new Set(drawn); updateRefMarks(); renderDrawn(drawn); renderCard(); setCurrent(number);
     });
-
     socket.on('state:meta',(s)=>{
-      started = !!s.started;
-      closed = !!s.closed;
-      setCurrent((s.current ?? null));
-      setMeta();
-      updateJoinStatus();
+      started=!!s.started; closed=!!s.closed; setMeta(); setCurrent((s.current??null));
+      if(joined){
+        if(s.closed){
+          setStatusMessage('Game finished. Waiting for the host to reset.');
+        } else if(s.started){
+          setStatusMessage('Game in progress – good luck!');
+        } else {
+          setStatusMessage('Game is ready. Waiting for the host to draw numbers.');
+        }
+      }
     });
-
-    socket.on('game:winner',()=>{
-      closed = true;
-      setMeta();
-      updateJoinStatus();
-    });
-
+    socket.on('game:winner',(w)=>{ closed=true; setMeta(); /* optional modal */ });
     socket.on('game:reset',()=>{
-      card = null;
-      drawnSet = new Set();
-      started = false;
-      closed = false;
-      updateRefMarks();
-      renderCard();
-      renderDrawn([]);
-      setCurrent(null);
-      setMeta();
-      setJoinButtonLabel();
-      nameInput.disabled = false;
-      updateJoinStatus('Game reset! Tap Play again to get a new card.');
-      updateJoinButtonState();
-      bingoBtn.disabled = true;
+      card=null; started=false; closed=false; drawnSet=new Set();updateRefMarks();
+      renderCard(); renderDrawn([]); setMeta(); setCurrent(null);
+      if(joined){
+        setStatusMessage('Game reset. Waiting for the host to start again.');
+      } else {
+        updateJoinButton();
+      }
     });
 
-    setJoinButtonLabel();
-    updateJoinStatus();
-    setMeta();
-    setCurrent(null);
+    socket.on('game:available',({gameId})=>{
+      activeGameId = gameId || null;
+      if(inviteGame){
+        setStatusMessage(`Joining game ${inviteGame}. Enter your name to hop in.`);
+        joinBtn.disabled=false;
+        joinBtn.removeAttribute('aria-disabled');
+        return;
+      }
+      if(joined){
+        if(gameId){
+          setStatusMessage(`Game ${gameId} is active.`);
+        } else {
+          setStatusMessage('Game finished. Waiting for the host to start a new round.');
+        }
+        return;
+      }
+      if(gameId){
+        setStatusMessage('A game is open! Enter your name to join.');
+      } else {
+        setStatusMessage('Waiting for the host to open a game.');
+      }
+      updateJoinButton();
+    });
+
+    socket.on('connect',()=>{
+      if(!inviteGame && !joined && status){
+        setStatusMessage('Waiting for the host to open a game.');
+      }
+    });
   </script>
 </body>
 </html>
