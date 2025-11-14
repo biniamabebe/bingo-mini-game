@@ -88,10 +88,9 @@
     
   <div class="layout">
     <div class="wrap ">
-    <h2>🎯 Join Bingo</h2>
-    <p class="hint">Enter the code from the host, or use a link like <code>/join?game=ABCD</code>.</p>
+      <h2>🎯 Join Bingo</h2>
+    <p class="hint" id="statusHint">Waiting for the host to open a game.</p>
     <div class="row">
-      <input id="code" placeholder="Game code (e.g. 7K3F)" style="text-transform:uppercase"/>
       <input id="name" placeholder="Your name (max 20 chars)" maxlength="20"/>
       <button id="joinBtn" class="btn primary">Join</button>
     </div>
@@ -123,10 +122,25 @@
   </div>
     
 
-  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js" crossorigin="anonymous"></script>
   <script>
     const socket = io();
     const el = id => document.getElementById(id);
+    const joinBtn = el('joinBtn');
+    const nameInput = el('name');
+    const status = el('statusHint');
+    joinBtn.disabled = true;
+    joinBtn.setAttribute('aria-disabled', 'true');
+    const inviteGame=(new URLSearchParams(location.search).get('game')||'').toUpperCase();
+    let activeGameId = inviteGame || null;
+    let joined=false;
+    if(inviteGame){
+      if(status){
+        status.textContent=`Joining game ${inviteGame}. Enter your name to hop in.`;
+      }
+      joinBtn.disabled=false;
+      joinBtn.removeAttribute('aria-disabled');
+    }
 
         // Build the static 1–75 reference board once
    function buildRefBoard(){
@@ -186,11 +200,7 @@
     buildRefBoard();           // ← builds the static 1–75 grid one time
     updateRefMarks();          // ← ensures it starts with no highlights
 
-    // Pre-fill from ?game=CODE
-    const pre = (new URLSearchParams(location.search).get('game')||'').toUpperCase();
-    if(pre) el('code').value = pre;
-
-    function renderCard(){
+      function renderCard(){
       if(!card){ el('board').innerHTML=''; return; }
       let html='<div class="grid">';
       ['B','I','N','G','O'].forEach(h=>html+=`<div class="cell head">${h}</div>`);
@@ -226,13 +236,57 @@
 
     function setMeta(){ el('st').textContent=started?'Yes':'No'; el('en').textContent=closed?'Yes':'No'; el('bingoBtn').disabled=!started||closed; }
 
+    function setStatusMessage(msg){
+      if(!status) return;
+      status.textContent = msg;
+    }
+
+    function updateJoinButton(){
+      if(joined){
+        joinBtn.disabled = true;
+        joinBtn.setAttribute('aria-disabled','true');
+        return;
+      }
+      if(inviteGame){
+        joinBtn.disabled = false;
+        joinBtn.removeAttribute('aria-disabled');
+        return;
+      }
+      const enabled = !!activeGameId;
+      joinBtn.disabled = !enabled;
+      if(enabled){
+        joinBtn.removeAttribute('aria-disabled');
+      } else {
+        joinBtn.setAttribute('aria-disabled','true');
+      }
+    }
+
     el('joinBtn').onclick=()=>{
-      const code=el('code').value.trim().toUpperCase();
       const name=el('name').value.trim();
-      if(!code||!name) return alert('Enter code and name');
-      socket.emit('player:join',{gameId:code,name},(res)=>{
-        if(!res.ok) return alert(res.error||'Join failed');
-        gameId=code; card=res.card; started=res.started; closed=res.closed;
+      if(!name) return alert('Enter your name');
+      if(joined) return;
+      const targetGame = inviteGame || activeGameId;
+      if(!targetGame){
+        setStatusMessage('Waiting for the host to open a game.');
+        joinBtn.disabled = true;
+        joinBtn.setAttribute('aria-disabled','true');
+        return;
+      }
+      joinBtn.disabled = true;
+      joinBtn.setAttribute('aria-disabled','true');
+      const payload={gameId:targetGame,name};
+      socket.emit('player:join',payload,(res)=>{
+        if(!res?.ok){
+          setStatusMessage(res?.error || 'Join failed. Please try again.');
+          updateJoinButton();
+          return alert(res?.error||'Join failed');
+        }
+        gameId=res.gameId; card=res.card; started=res.started; closed=res.closed;
+        activeGameId = res.gameId || activeGameId;
+        joined=true;
+        setStatusMessage(`You're in! Playing game ${res.gameId}.`);
+        nameInput.disabled = true;
+        joinBtn.textContent = 'Joined';
         drawnSet=new Set(res.drawn||[]); updateRefMarks(); renderCard(); renderDrawn(res.drawn||[]); setMeta();
         const last=(res.drawn&&res.drawn.length)?res.drawn[res.drawn.length-1]:null;
         setCurrent(last);
@@ -252,11 +306,55 @@
     });
     socket.on('state:meta',(s)=>{
       started=!!s.started; closed=!!s.closed; setMeta(); setCurrent((s.current??null));
+      if(joined){
+        if(s.closed){
+          setStatusMessage('Game finished. Waiting for the host to reset.');
+        } else if(s.started){
+          setStatusMessage('Game in progress – good luck!');
+        } else {
+          setStatusMessage('Game is ready. Waiting for the host to draw numbers.');
+        }
+      }
     });
     socket.on('game:winner',(w)=>{ closed=true; setMeta(); /* optional modal */ });
     socket.on('game:reset',()=>{
       card=null; started=false; closed=false; drawnSet=new Set();updateRefMarks();
       renderCard(); renderDrawn([]); setMeta(); setCurrent(null);
+      if(joined){
+        setStatusMessage('Game reset. Waiting for the host to start again.');
+      } else {
+        updateJoinButton();
+      }
+    });
+
+    socket.on('game:available',({gameId})=>{
+      activeGameId = gameId || null;
+      if(inviteGame){
+        setStatusMessage(`Joining game ${inviteGame}. Enter your name to hop in.`);
+        joinBtn.disabled=false;
+        joinBtn.removeAttribute('aria-disabled');
+        return;
+      }
+      if(joined){
+        if(gameId){
+          setStatusMessage(`Game ${gameId} is active.`);
+        } else {
+          setStatusMessage('Game finished. Waiting for the host to start a new round.');
+        }
+        return;
+      }
+      if(gameId){
+        setStatusMessage('A game is open! Enter your name to join.');
+      } else {
+        setStatusMessage('Waiting for the host to open a game.');
+      }
+      updateJoinButton();
+    });
+
+    socket.on('connect',()=>{
+      if(!inviteGame && !joined && status){
+        setStatusMessage('Waiting for the host to open a game.');
+      }
     });
   </script>
 </body>
