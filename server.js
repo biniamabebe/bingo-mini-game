@@ -50,6 +50,12 @@ app.get('/',(_,res)=>res.redirect('/public/host.html'));
 app.get('/join',(_,res)=>res.redirect('/public/player.html'));
 
 const games=new Map();
+let activeGameId=null;
+
+function setActiveGame(code){
+  activeGameId = code ? normalizeCode(code) : null;
+  io.emit('game:available',{gameId:activeGameId});
+}
 let currentGameId=null;
 // Debug (optional)
 app.get('/debug/games',(req,res)=>res.json({games:[...games.keys()]}));
@@ -76,10 +82,7 @@ function setActiveGame(code){
   io.emit('game:available',{gameId:currentGameId});
 }
 
-function setActiveGame(code){
-  currentGameId=code?normalizeCode(code):null;
-  io.emit('game:available',{gameId:currentGameId});
-}
+
 function drawNumber(game){
   const avail=game.numbers.filter(n=>!game.drawn.includes(n));
   if(!avail.length) return null;
@@ -102,22 +105,28 @@ function stopAutoDraw(game){
   game.interval=null; broadcastState(game);
 }
 io.on('connection',(socket)=>{
-  socket.emit('game:available',{gameId:currentGameId});
+  socket.emit('game:available',{gameId:activeGameId});
   socket.on('host:create',(ack)=>{
     const code=normalizeCode(makeCode());
     const game={id:code,hostSocketId:socket.id,players:new Map(),started:false,closed:false,winner:null,
       numbers:Array.from({length:75},(_,i)=>i+1),drawn:[],current:null,interval:null};
     games.set(code,game); socket.join(code);
-    setActiveGame(code);
     if(typeof ack==='function') ack({ok:true,gameId:code}); broadcastState(game);
+    setActiveGame(code);
   });
+io.engine.on('connection_error', (err) => {
+    console.error('[SOCKET.IO CONNECTION ERROR]', err);
+    });
+    io.on('error', (err) => {
+  console.error('[SOCKET.IO ERROR]', err);
+});
   socket.on('host:join',({gameId},ack)=>{
     const code=normalizeCode(gameId); const game=games.get(code);
     if(!game){ if(typeof ack==='function') ack({ok:false,error:'Game not found'}); return; }
     game.hostSocketId=socket.id; socket.join(code);
-    setActiveGame(code);
     if(typeof ack==='function') ack({ok:true,gameId:code});
     broadcastState(game); emitPlayersList(game);
+    if(!game.closed) setActiveGame(code);
   });
 
   socket.on('host:start',({gameId},ack)=>{
@@ -142,23 +151,23 @@ io.on('connection',(socket)=>{
     const fresh={id:code,hostSocketId:old.hostSocketId,players:new Map(),started:false,closed:false,winner:null,
       numbers:Array.from({length:75},(_,i)=>i+1),drawn:[],current:null,interval:null};
     games.set(code,fresh); io.to(code).emit('game:reset');
-    setActiveGame(code);
     broadcastState(fresh); emitPlayersList(fresh); ack&&ack({ok:true});
+    setActiveGame(code);
   });
 
   socket.on('player:join',({gameId,name},ack)=>{
-    const requested=normalizeCode(gameId||currentGameId||'');
-    if(!requested) return void ack&&ack({ok:false,error:'No active game'});
-    const game=games.get(requested);
-    if(!game) return void ack&&ack({ok:false,error:'Game not found'});
+    const manual=normalizeCode(gameId);
+    const targetCode = manual || activeGameId;
+    const game=targetCode ? games.get(targetCode) : null;
+    if(!game) return void ack&&ack({ok:false,error:'Waiting for host to start a game'});
     if(game.closed) return void ack&&ack({ok:false,error:'Game already ended'});
     const trimmed=(name||'').trim().slice(0,20);
     if(!trimmed) return void ack&&ack({ok:false,error:'Name required'});
     if([...game.players.values()].some(p=>p.name.toLowerCase()===trimmed.toLowerCase()))
       return void ack&&ack({ok:false,error:'Name already taken'});
     const player={id:socket.id,name:trimmed,card:makeCard(),disqualified:false};
-     game.players.set(socket.id,player); socket.join(game.id);
-    ack&&ack({ok:true,gameId:game.id,card:player.card,drawn:game.drawn,started:game.started,closed:game.closed,winner:game.winner});
+      game.players.set(socket.id,player); socket.join(game.id);
+    ack&&ack({ok:true,card:player.card,drawn:game.drawn,started:game.started,closed:game.closed,winner:game.winner,gameId:game.id});
     emitPlayersList(game); broadcastState(game);
   });
 
