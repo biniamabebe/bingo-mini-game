@@ -37,11 +37,20 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+io.engine.on('connection_error', (err) => {
+  console.error('[SOCKET.IO CONNECTION ERROR]', err);
+});
+
+io.on('error', (err) => {
+  console.error('[SOCKET.IO ERROR]', err);
+});
+
 app.use('/public', express.static(path.join(__dirname,'public')));
 app.get('/',(_,res)=>res.redirect('/public/host.html'));
 app.get('/join',(_,res)=>res.redirect('/public/player.html'));
 
 const games=new Map();
+let currentGameId=null;
 // Debug (optional)
 app.get('/debug/games',(req,res)=>res.json({games:[...games.keys()]}));
 app.get('/debug/game/:id',(req,res)=>{
@@ -60,6 +69,16 @@ function broadcastState(game){
     started:game.started, closed:game.closed, winner:game.winner,
     drawnCount:game.drawn.length, current:game.current
   });
+}
+
+function setActiveGame(code){
+  currentGameId=code?normalizeCode(code):null;
+  io.emit('game:available',{gameId:currentGameId});
+}
+
+function setActiveGame(code){
+  currentGameId=code?normalizeCode(code):null;
+  io.emit('game:available',{gameId:currentGameId});
 }
 function drawNumber(game){
   const avail=game.numbers.filter(n=>!game.drawn.includes(n));
@@ -82,27 +101,21 @@ function stopAutoDraw(game){
   game.started=false; if(game.interval) clearInterval(game.interval);
   game.interval=null; broadcastState(game);
 }
-
 io.on('connection',(socket)=>{
+  socket.emit('game:available',{gameId:currentGameId});
   socket.on('host:create',(ack)=>{
     const code=normalizeCode(makeCode());
     const game={id:code,hostSocketId:socket.id,players:new Map(),started:false,closed:false,winner:null,
       numbers:Array.from({length:75},(_,i)=>i+1),drawn:[],current:null,interval:null};
     games.set(code,game); socket.join(code);
+    setActiveGame(code);
     if(typeof ack==='function') ack({ok:true,gameId:code}); broadcastState(game);
   });
-io.engine.on('connection_error', (err) => {
-    console.error('[SOCKET.IO CONNECTION ERROR]', err);
-    });
-    io.on('error', (err) => {
-  console.error('[SOCKET.IO ERROR]', err);
-});
-
-
   socket.on('host:join',({gameId},ack)=>{
     const code=normalizeCode(gameId); const game=games.get(code);
     if(!game){ if(typeof ack==='function') ack({ok:false,error:'Game not found'}); return; }
     game.hostSocketId=socket.id; socket.join(code);
+    setActiveGame(code);
     if(typeof ack==='function') ack({ok:true,gameId:code});
     broadcastState(game); emitPlayersList(game);
   });
@@ -122,18 +135,21 @@ io.engine.on('connection_error', (err) => {
     stopAutoDraw(game); ack&&ack({ok:true});
   });
 
-  socket.on('host:reset',({gameId},ack)=>{
+ socket.on('host:reset',({gameId},ack)=>{
     const code=normalizeCode(gameId); const old=games.get(code);
     if(!old) return void ack&&ack({ok:false,error:'Game not found'});
     if(old.interval) clearInterval(old.interval);
     const fresh={id:code,hostSocketId:old.hostSocketId,players:new Map(),started:false,closed:false,winner:null,
       numbers:Array.from({length:75},(_,i)=>i+1),drawn:[],current:null,interval:null};
     games.set(code,fresh); io.to(code).emit('game:reset');
+    setActiveGame(code);
     broadcastState(fresh); emitPlayersList(fresh); ack&&ack({ok:true});
   });
 
   socket.on('player:join',({gameId,name},ack)=>{
-    const code=normalizeCode(gameId); const game=games.get(code);
+    const requested=normalizeCode(gameId||currentGameId||'');
+    if(!requested) return void ack&&ack({ok:false,error:'No active game'});
+    const game=games.get(requested);
     if(!game) return void ack&&ack({ok:false,error:'Game not found'});
     if(game.closed) return void ack&&ack({ok:false,error:'Game already ended'});
     const trimmed=(name||'').trim().slice(0,20);
@@ -141,8 +157,8 @@ io.engine.on('connection_error', (err) => {
     if([...game.players.values()].some(p=>p.name.toLowerCase()===trimmed.toLowerCase()))
       return void ack&&ack({ok:false,error:'Name already taken'});
     const player={id:socket.id,name:trimmed,card:makeCard(),disqualified:false};
-    game.players.set(socket.id,player); socket.join(code);
-    ack&&ack({ok:true,card:player.card,drawn:game.drawn,started:game.started,closed:game.closed,winner:game.winner});
+     game.players.set(socket.id,player); socket.join(game.id);
+    ack&&ack({ok:true,gameId:game.id,card:player.card,drawn:game.drawn,started:game.started,closed:game.closed,winner:game.winner});
     emitPlayersList(game); broadcastState(game);
   });
 
@@ -155,9 +171,10 @@ io.engine.on('connection_error', (err) => {
     if(!game.drawn.includes(number)) return void ack&&ack({ok:false,error:'Number not drawn'});
     if(player.card.marked[row][col]) return void ack&&ack({ok:true});
     player.card.marked[row][col]=true;
-    if(hasBingo(player.card.marked) && !game.closed){
+     if(hasBingo(player.card.marked) && !game.closed){
       game.closed=true; game.winner={id:player.id,name:player.name,timeISO:new Date().toISOString()};
       stopAutoDraw(game); io.to(game.id).emit('game:winner', game.winner);
+      setActiveGame(null);
     }
     ack&&ack({ok:true,marked:true,closed:game.closed,winner:game.winner});
     broadcastState(game); emitPlayersList(game);
@@ -171,6 +188,7 @@ io.engine.on('connection_error', (err) => {
       if(!game.closed){
         game.closed=true; game.winner={id:player.id,name:player.name,timeISO:new Date().toISOString()};
         stopAutoDraw(game); io.to(game.id).emit('game:winner', game.winner);
+        setActiveGame(null);
       }
       return void ack&&ack({ok:true,valid:true,winner:game.winner});
     } else {
